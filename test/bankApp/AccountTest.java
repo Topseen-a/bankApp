@@ -6,15 +6,12 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AccountTest {
-    Account account;
-    Account secondAccount;
-    private int pin = 1234;
-    private int secondPin = 5678;
+    private Account account;
+    private String pin = "1234";
 
     @BeforeEach
     public void setUp() {
-        account = new Account("8149587217", pin);
-        secondAccount = new Account("8033297106", secondPin);
+        account = new Account("Tayo","08149587217", pin);
     }
 
     @Test
@@ -30,41 +27,39 @@ public class AccountTest {
     }
 
     @Test
-    public void testThatWhenDepositIsNegative2kThenBalanceIsUnchanged() {
+    public void testThatWhenDepositIsNegative2kThrowsException() {
         assertEquals(0, account.checkBalance(pin));
-        account.deposit(-2_000);
-        assertEquals(0, account.checkBalance(pin));
+
+        assertThrows(IllegalArgumentException.class, () -> account.deposit(-2_000));
     }
 
     @Test
-    public void testThatWhenDepositIs5kAndWithdrawNegative2k_balanceRemainsUnchanged() {
+    public void testThatWhenDepositIs5kAndWithdrawIs2k_balanceIs3k() {
         assertEquals(0, account.checkBalance(pin));
         account.deposit(5_000);
-        account.withdraw(-2000, pin);
-        assertEquals(5_000, account.checkBalance(pin));
-    }
-
-    @Test
-    public void testThatWhenWithdrawIs10kAtInitialBalance_balanceIsUnchanged() {
-        assertEquals(0, account.checkBalance(pin));
-        account.withdraw(10_000, pin);
-        assertEquals(0, account.checkBalance(pin));
-    }
-
-    @Test
-    public void testThatWhenDepositIs5kWithdraw2kThenBalanceIs3k() {
-        assertEquals(0, account.checkBalance(pin));
-        account.deposit(5_000);
-        account.withdraw(2_000, pin);
+        account.withdraw(2000, pin);
         assertEquals(3_000, account.checkBalance(pin));
     }
 
     @Test
-    public void testThatWhenDepositIs5kThenWithdrawMoreThanBalance_balanceRemainsUnchanged() {
+    public void testThatDepositIs5kAndWithdrawNegativeThrowsException() {
         assertEquals(0, account.checkBalance(pin));
         account.deposit(5_000);
-        account.withdraw(10_000, pin);
-        assertEquals(5_000, account.checkBalance(pin));
+        assertThrows(IllegalArgumentException.class, () -> account.withdraw(-2_000, pin));
+    }
+
+    @Test
+    public void testThatWhenWithdrawIs10kAtInitialBalanceThrowsException() {
+        assertEquals(0, account.checkBalance(pin));
+
+        assertThrows(IllegalArgumentException.class, () -> account.withdraw(10_000, pin));
+    }
+
+    @Test
+    public void testThatWhenDepositIs5kThenWithdrawMoreThanBalanceThrowsException() {
+        assertEquals(0, account.checkBalance(pin));
+        account.deposit(5_000);
+        assertThrows(IllegalArgumentException.class, () -> account.withdraw(10_000, pin));
     }
 
     @Test
@@ -93,38 +88,43 @@ public class AccountTest {
     }
 
     @Test
-    public void testThatTransferSucceedsWhenBalanceIsSufficient() {
+    public void testThatCheckBalanceWithWrongPinThrowsException() {
         assertEquals(0, account.checkBalance(pin));
         account.deposit(5_000);
-
-        boolean result = account.transfer(secondAccount, 2_000, pin);
-
-        assertTrue(result);
-        assertEquals(3_000, account.checkBalance(pin));
-        assertEquals(2_000, secondAccount.checkBalance(secondPin));
+        assertThrows(IllegalArgumentException.class, () -> account.checkBalance("8122"));
     }
 
     @Test
-    public void testThatTransferFailsWithWrongPin() {
+    public void testThatChangePinWorksSuccessfully() {
         assertEquals(0, account.checkBalance(pin));
-        account.deposit(5_000);
-
-        boolean result = account.transfer(secondAccount, 2_000, 9999);
-
-        assertFalse(result);
-        assertEquals(5_000, account.checkBalance(pin));
-        assertEquals(0, secondAccount.checkBalance(secondPin));
+        account.changePin("1234", "4321");
+        account.deposit(1000);
+        assertEquals(1000, account.checkBalance("4321"));
     }
 
     @Test
-    public void testThatTransferFailsWhenInsufficientFunds() {
-        assertEquals(0, account.checkBalance(pin));
-        account.deposit(1_000);
+    public void testThatChangePinWithWrongOldPinThrowsException() {
+        assertThrows(IllegalArgumentException.class, () -> account.changePin("1223", "4321"));
+    }
 
-        boolean result = account.transfer(secondAccount, 5_000, pin);
+    @Test
+    public void testThatSetAccountNumberWithValid10_DigitsSetsSuccessfully() {
+        account.setAccountNumber("8149587217");
+        assertEquals("8149587217", account.getAccountNumber());
+    }
 
-        assertFalse(result);
-        assertEquals(1_000, account.checkBalance(pin));
-        assertEquals(0, secondAccount.checkBalance(secondPin));
+    @Test
+    public void testThatSetAccountNumberWithLessThan10_DigitsThrowsException() {
+        assertThrows(IllegalArgumentException.class, () -> {account.setAccountNumber("81495872");});
+    }
+
+    @Test
+    public void testThatSetAccountNumberWithMoreThan10_DigitsThrowsException() {
+        assertThrows(IllegalArgumentException.class, () -> {account.setAccountNumber("08149587217");});
+    }
+
+    @Test
+    public void testThatSetAccountNumberWithLettersThrowsException() {
+        assertThrows(IllegalArgumentException.class, () -> {account.setAccountNumber("81495abcde");});
     }
 }
